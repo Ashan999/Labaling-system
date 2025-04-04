@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFA Label Printing System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .checkbox-item input {
+            width: auto;
+            margin-right: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .settings-panel {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        .preview-container {
+            width: 210mm;
+            height: 297mm;
+            margin: 20px auto;
+            padding: 10mm;
+            border: 1px solid #ddd;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .preview-header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .preview-company {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .preview-address {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .preview-contact {
+            font-size: 14px;
+        }
+        .preview-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .preview-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .preview-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .preview-value {
+            flex: 1;
+        }
+        .preview-order {
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .preview-parts {
+            margin: 15px 0;
+        }
+        .preview-notes {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+            border-radius: 4px;
+        }
+        .date-time {
+            text-align: right;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .preview-container, .preview-container * {
+                visibility: visible;
+            }
+            .preview-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 10mm;
+                box-shadow: none;
+                border: none;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SAFA Label Printing System</h1>
+        
+        <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
+        <div class="settings-panel" id="settingsPanel">
+            <div class="form-group">
+                <label for="contactName">Contact Name:</label>
+                <input type="text" id="contactName" value="Ashan">
+            </div>
+            <div class="form-group">
+                <label for="contactPhone">Contact Phone:</label>
+                <input type="text" id="contactPhone" value="052 4186102">
+            </div>
+            <button onclick="saveSettings()">Save</button>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Material Type:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="materialTint" name="material" value="Tint Film" checked onchange="updatePartsVisibility()">
+                        <label for="materialTint">Tint Film</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="materialPPF" name="material" value="PPF" onchange="updatePartsVisibility()">
+                        <label for="materialPPF">PPF (Paint Protection Film)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Finish:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="finishGloss" name="finish" value="Gloss" checked>
+                        <label for="finishGloss">Gloss</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="finishMatte" name="finish" value="Matte">
+                        <label for="finishMatte">Matte</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group" id="tintPercentageGroup">
+                <label for="tintPercentage">Tint Percentage:</label>
+                <select id="tintPercentage">
+                    <option value="0%" selected>0%</option>
+                    <option value="5%">5%</option>
+                    <option value="15%">15%</option>
+                    <option value="20%">20%</option>
+                    <option value="30%">30%</option>
+                    <option value="35%">35%</option>
+                    <option value="50%">50%</option>
+                    <option value="70%">70%</option>
+                    <option value="80%">80%</option>
+                    <option value="90%">90%</option>
+                    <option value="100%">100%</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="carBrand">Car Brand:</label>
+                <select id="carBrand">
+                    <option value="">Select Brand</option>
+                    <option value="Acura">Acura</option>
+                    <option value="Alfa Romeo">Alfa Romeo</option>
+                    <option value="Aston Martin">Aston Martin</option>
+                    <option value="Audi">Audi</option>
+                    <option value="Bentley">Bentley</option>
+                    <option value="BMW">BMW</option>
+                    <option value="Bugatti">Bugatti</option>
+                    <option value="Buick">Buick</option>
+                    <option value="Cadillac">Cadillac</option>
+                    <option value="Chevrolet">Chevrolet</option>
+                    <option value="Chrysler">Chrysler</option>
+                    <option value="Citroen">Citroen</option>
+                    <option value="Dodge">Dodge</option>
+                    <option value="Ferrari">Ferrari</option>
+                    <option value="Fiat">Fiat</option>
+                    <option value="Ford">Ford</option>
+                    <option value="Genesis">Genesis</option>
+                    <option value="GMC">GMC</option>
+                    <option value="Honda">Honda</option>
+                    <option value="Hyundai">Hyundai</option>
+                    <option value="Infiniti">Infiniti</option>
+                    <option value="Jaguar">Jaguar</option>
+                    <option value="Jeep">Jeep</option>
+                    <option value="Kia">Kia</option>
+                    <option value="Koenigsegg">Koenigsegg</option>
+                    <option value="Lamborghini">Lamborghini</option>
+                    <option value="Land Rover">Land Rover</option>
+                    <option value="Lexus">Lexus</option>
+                    <option value="Lincoln">Lincoln</option>
+                    <option value="Lotus">Lotus</option>
+                    <option value="Maserati">Maserati</option>
+                    <option value="Mazda">Mazda</option>
+                    <option value="McLaren">McLaren</option>
+                    <option value="Mercedes-Benz">Mercedes-Benz</option>
+                    <option value="Mini">Mini</option>
+                    <option value="Mitsubishi">Mitsubishi</option>
+                    <option value="Nissan">Nissan</option>
+                    <option value="Pagani">Pagani</option>
+                    <option value="Peugeot">Peugeot</option>
+                    <option value="Porsche">Porsche</option>
+                    <option value="Ram">Ram</option>
+                    <option value="Renault">Renault</option>
+                    <option value="Rolls-Royce">Rolls-Royce</option>
+                    <option value="Skoda">Skoda</option>
+                    <option value="Subaru">Subaru</option>
+                    <option value="Suzuki">Suzuki</option>
+                    <option value="Tesla">Tesla</option>
+                    <option value="Toyota">Toyota</option>
+                    <option value="Volkswagen">Volkswagen</option>
+                    <option value="Volvo">Volvo</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="carModel">Car Model:</label>
+                <input type="text" id="carModel" placeholder="Enter car model">
+            </div>
+            
+            <div class="form-group">
+                <label for="carYear">Year:</label>
+                <select id="carYear">
+                    <option value="2025" selected>2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                    <option value="2018">2018</option>
+                    <option value="2017">2017</option>
+                    <option value="2016">2016</option>
+                    <option value="2015">2015</option>
+                    <option value="2014">2014</option>
+                    <option value="2013">2013</option>
+                    <option value="2012">2012</option>
+                    <option value="2011">2011</option>
+                    <option value="2010">2010</option>
+                    <option value="2009">2009</option>
+                    <option value="2008">2008</option>
+                    <option value="2007">2007</option>
+                    <option value="2006">2006</option>
+                    <option value="2005">2005</option>
+                    <option value="2004">2004</option>
+                    <option value="2003">2003</option>
+                    <option value="2002">2002</option>
+                    <option value="2001">2001</option>
+                    <option value="2000">2000</option>
+                    <option value="1999">1999</option>
+                    <option value="1998">1998</option>
+                    <option value="1997">1997</option>
+                    <option value="1996">1996</option>
+                    <option value="1995">1995</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row" id="tintPartsSection">
+            <div class="form-group">
+                <label>Parts (Tint Film):</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="frontWindshield" name="parts" value="Front Windshield">
+                        <label for="frontWindshield">Front Windshield</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="rearWindshield" name="parts" value="Rear Windshield">
+                        <label for="rearWindshield">Rear Windshield</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="frontSideWindows" name="parts" value="Front Side Windows">
+                        <label for="frontSideWindows">Front Side Windows</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="rearSideWindows" name="parts" value="Rear Side Windows">
+                        <label for="rearSideWindows">Rear Side Windows</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="sunroof" name="parts" value="Sunroof">
+                        <label for="sunroof">Sunroof</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="panoramicRoof" name="parts" value="Panoramic Roof">
+                        <label for="panoramicRoof">Panoramic Roof</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="quarterWindows" name="parts" value="Quarter Windows">
+                        <label for="quarterWindows">Quarter Windows</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-row" id="ppfPartsSection" style="display: none;">
+            <div class="form-group">
+                <label>Parts (PPF):</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hood" name="parts" value="Hood">
+                        <label for="hood">Hood</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="frontBumper" name="parts" value="Front Bumper">
+                        <label for="frontBumper">Front Bumper</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="rearBumper" name="parts" value="Rear Bumper">
+                        <label for="rearBumper">Rear Bumper</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="fenders" name="parts" value="Fenders">
+                        <label for="fenders">Fenders</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="doors" name="parts" value="Doors">
+                        <label for="doors">Doors</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="mirrors" name="parts" value="Mirrors">
+                        <label for="mirrors">Mirrors</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="roof" name="parts" value="Roof">
+                        <label for="roof">Roof</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="trunk" name="parts" value="Trunk">
+                        <label for="trunk">Trunk</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="aPillars" name="parts" value="A-Pillars">
+                        <label for="aPillars">A-Pillars</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="headlights" name="parts" value="Headlights">
+                        <label for="headlights">Headlights</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="fullFrontend" name="parts" value="Full Frontend">
+                        <label for="fullFrontend">Full Frontend</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="fullVehicle" name="parts" value="Full Vehicle">
+                        <label for="fullVehicle">Full Vehicle</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" value="1" min="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="orderNumber">Order Number:</label>
+                <input type="text" id="orderNumber" readonly>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="location">Delivery Location:</label>
+                <input type="text" id="location" placeholder="Enter delivery location">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="notes">Additional Notes:</label>
+                <textarea id="notes" rows="4" placeholder="Enter any additional notes"></textarea>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <button onclick="previewLabel()">Preview Label</button>
+            <button onclick="printLabel()">Print Label</button>
+        </div>
+    </div>
+    
+    <div class="preview-container" id="previewContainer">
+        <div class="date-time" id="dateTimeDisplay"></div>
+        
+        <div class="preview-header">
+            <div class="preview-company">SAFA</div>
+            <div class="preview-address">13 A st Al Quoz Sheikh Zayed Rd, Dubai, United Arab Emirates</div>
+            <div class="preview-contact">Contact: <span id="previewContactName">Ashan</span> (<span id="previewContactPhone">052 4186102</span>)</div>
+        </div>
+        
+        <div class="preview-order" id="previewOrderNumber"></div>
+        
+        <div class="preview-content">
+            <div class="preview-row">
+                <div class="preview-label">Material Type:</div>
+                <div class="preview-value" id="previewMaterial"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Finish:</div>
+                <div class="preview-value" id="previewFinish"></div>
+            </div>
+            
+            <div class="preview-row" id="previewTintRow">
+                <div class="preview-label">Tint Percentage:</div>
+                <div class="preview-value" id="previewTintPercentage"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Vehicle:</div>
+                <div class="preview-value" id="previewVehicle"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Parts:</div>
+                <div class="preview-value preview-parts" id="previewParts"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Quantity:</div>
+                <div class="preview-value" id="previewQuantity"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Delivery Location:</div>
+                <div class="preview-value" id="previewLocation"></div>
+            </div>
+            
+            <div class="preview-row">
+                <div class="preview-label">Notes:</div>
+                <div class="preview-value preview-notes" id="previewNotes"></div>
+            </div>
+        </div>
+        
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+            <button onclick="hidePreview()">Back to Form</button>
+            <button onclick="window.print()">Print This Label</button>
+        </div>
+    </div>
+    
+    <script>
+        // Generate order number when page loads
+        window.onload = function() {
+            generateOrderNumber();
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Update time every minute
+        };
+        
+        function updateDateTime() {
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('dateTimeDisplay').textContent = formattedDate;
+        }
+        
+        function generateOrderNumber() {
+            const now = new Date();
+            const year = now.getFullYear().toString();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+            
+            const orderNumber = `3M SAFA-${year}${month}${day}-${hours}${minutes}-${random}`;
+            document.getElementById('orderNumber').value = orderNumber;
+        }
+        
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function saveSettings() {
+            const contactName = document.getElementById('contactName').value;
+            const contactPhone = document.getElementById('contactPhone').value;
+            
+            document.getElementById('previewContactName').textContent = contactName;
+            document.getElementById('previewContactPhone').textContent = contactPhone;
+            
+            document.getElementById('settingsPanel').style.display = 'none';
+        }
+        
+        function updatePartsVisibility() {
+            const isTint = document.getElementById('materialTint').checked;
+            document.getElementById('tintPartsSection').style.display = isTint ? 'block' : 'none';
+            document.getElementById('ppfPartsSection').style.display = isTint ? 'none' : 'block';
+            document.getElementById('tintPercentageGroup').style.display = isTint ? 'block' : 'none';
+            document.getElementById('previewTintRow').style.display = isTint ? 'flex' : 'none';
+            
+            // Uncheck all checkboxes when switching between material types
+            const checkboxes = document.querySelectorAll('input[name="parts"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+        
+        function getSelectedParts() {
+            const isTint = document.getElementById('materialTint').checked;
+            const selector = isTint ? '#tintPartsSection input[name="parts"]:checked' : '#ppfPartsSection input[name="parts"]:checked';
+            const checkedParts = document.querySelectorAll(selector);
+            
+            const parts = [];
+            checkedParts.forEach(part => {
+                parts.push(part.value);
+            });
+            
+            return parts;
+        }
+        
+        function previewLabel() {
+            // Get form values
+            const material = document.querySelector('input[name="material"]:checked').value;
+            const finish = document.querySelector('input[name="finish"]:checked').value;
+            const tintPercentage = document.getElementById('tintPercentage').value;
+            const carBrand = document.getElementById('carBrand').value;
+            const carModel = document.getElementById('carModel').value;
+            const carYear = document.getElementById('carYear').value;
+            const parts = getSelectedParts();
+            const quantity = document.getElementById('quantity').value;
+            const orderNumber = document.getElementById('orderNumber').value;
+            const location = document.getElementById('location').value;
+            const notes = document.getElementById('notes').value;
+            
+            // Fill preview with form values
+            document.getElementById('previewMaterial').textContent = material;
+            document.getElementById('previewFinish').textContent = finish;
+            document.getElementById('previewTintPercentage').textContent = tintPercentage;
+            document.getElementById('previewVehicle').textContent = `${carBrand} ${carModel} ${carYear}`;
+            document.getElementById('previewParts').textContent = parts.join(', ');
+            document.getElementById('previewQuantity').textContent = quantity;
+            document.getElementById('previewOrderNumber').textContent = orderNumber;
+            document.getElementById('previewLocation').textContent = location;
+            document.getElementById('previewNotes').textContent = notes;
+            
+            // Show preview
+            document.querySelector('.container').style.display = 'none';
+            document.getElementById('previewContainer').style.display = 'block';
+        }
+        
+        function hidePreview() {
+            document.querySelector('.container').style.display = 'block';
+            document.getElementById('previewContainer').style.display = 'none';
+        }
+        
+        function printLabel() {
+            previewLabel();
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
